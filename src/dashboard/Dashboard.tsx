@@ -27,7 +27,12 @@ import { ModalMatricula } from './ModalMatricula';
 interface DashboardProps {
   estudiantes: AlumnoData[];
   docenteUsuario: string;
-  onActualizarNota: (alumnoId: string, cursoId: string, notas: NotaPeriodo, periodo: PeriodoId) => void;
+  onActualizarNota: (
+    alumnoId: string,
+    cursoId: string,
+    notas: NotaPeriodo,
+    periodo: PeriodoId
+  ) => Promise<void>;
   onMatricularEstudiante: (nuevo: AlumnoCreateData) => Promise<void>;
   onEliminarEstudiante: (alumnoId: string) => Promise<void>;
 }
@@ -403,8 +408,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           alumno={alumnoAEditar}
           periodoActivo={periodoDashboard}
           onCerrar={() => setAlumnoAEditar(null)}
-          onGuardar={(alumnoId, cursoId, notas) => {
-            onActualizarNota(alumnoId, cursoId, notas, periodoDashboard);
+          onGuardar={async (alumnoId, cursoId, notas) => {
+            await onActualizarNota(alumnoId, cursoId, notas, periodoDashboard);
             setAlumnoAEditar(null);
           }}
         />

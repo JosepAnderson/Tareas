@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   GraduationCap,
   Search,
@@ -37,6 +37,28 @@ export default function App() {
     }, 4000);
   };
 
+  useEffect(() => {
+    const cargarEstudiantes = async () => {
+      try {
+        const response = await fetch('/api/alumnos');
+        if (!response.ok) {
+          throw new Error(`No se pudieron cargar los estudiantes (HTTP ${response.status}).`);
+        }
+
+        const alumnos: AlumnoData[] = await response.json();
+        setEstudiantes(alumnos);
+      } catch (error) {
+        mostrarMensaje(
+          error instanceof Error
+            ? error.message
+            : 'No se pudieron cargar los estudiantes desde la base de datos.'
+        );
+      }
+    };
+
+    void cargarEstudiantes();
+  }, []);
+
   // Manejo de inicio de sesión docente
   const handleLoginExitoso = (nombreDocente: string) => {
     setEstaAutenticado(true);
@@ -52,12 +74,35 @@ export default function App() {
   };
 
   // Actualización de notas en tiempo real desde el dashboard
-  const handleActualizarNota = (
+  const handleActualizarNota = async (
     alumnoId: string,
     cursoId: string,
     notas: NotaPeriodo,
     periodo: PeriodoId
   ) => {
+    const response = await fetch('/api/calificaciones', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        alumno_id: alumnoId,
+        curso_id: cursoId,
+        periodo,
+        ...notas,
+      }),
+    });
+    const respuesta: unknown = await response.json();
+
+    if (!response.ok) {
+      const detalle =
+        typeof respuesta === 'object' &&
+        respuesta !== null &&
+        'detail' in respuesta &&
+        typeof respuesta.detail === 'string'
+          ? respuesta.detail
+          : `No se pudieron guardar las calificaciones (HTTP ${response.status}).`;
+      throw new Error(detalle);
+    }
+
     setEstudiantes(prev =>
       prev.map(est => {
         if (est.id !== alumnoId) return est;

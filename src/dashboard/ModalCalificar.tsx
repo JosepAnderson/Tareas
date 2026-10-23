@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit3, X } from 'lucide-react';
+import { AlertTriangle, Edit3, X } from 'lucide-react';
 import { AlumnoData, NotaPeriodo, PeriodoId } from '../consulta_dni/tipos';
 import { PERIODOS_INFO, calcularPromedioBimestral } from '../consulta_dni/datos';
 
@@ -7,7 +7,11 @@ interface ModalCalificarProps {
   alumno: AlumnoData;
   periodoActivo: PeriodoId;
   onCerrar: () => void;
-  onGuardar: (alumnoId: string, cursoId: string, notasActualizadas: NotaPeriodo) => void;
+  onGuardar: (
+    alumnoId: string,
+    cursoId: string,
+    notasActualizadas: NotaPeriodo
+  ) => Promise<void>;
 }
 
 export const ModalCalificar: React.FC<ModalCalificarProps> = ({
@@ -29,6 +33,8 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
   };
 
   const [edicionNotas, setEdicionNotas] = useState<NotaPeriodo>({ ...notasIniciales });
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
 
   const handleCambioCurso = (nuevoId: string) => {
     setCursoSeleccionadoId(nuevoId);
@@ -38,14 +44,22 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     const n1 = Math.min(20, Math.max(0, Number(edicionNotas.n1) || 0));
     const n2 = Math.min(20, Math.max(0, Number(edicionNotas.n2) || 0));
     const n3 = Math.min(20, Math.max(0, Number(edicionNotas.n3) || 0));
     const asistencia = Math.min(100, Math.max(0, Number(edicionNotas.asistencia) || 0));
 
-    onGuardar(alumno.id, cursoSeleccionadoId, { n1, n2, n3, asistencia });
+    setGuardando(true);
+    try {
+      await onGuardar(alumno.id, cursoSeleccionadoId, { n1, n2, n3, asistencia });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'No se pudieron guardar las calificaciones.');
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const promActual = calcularPromedioBimestral(edicionNotas);
@@ -65,6 +79,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
           </div>
           <button
             onClick={onCerrar}
+            disabled={guardando}
             className="text-slate-400 hover:text-white p-1 rounded-md transition-colors"
           >
             <X className="w-5 h-5" />
@@ -72,6 +87,12 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           {/* Selector de Asignatura */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -79,6 +100,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
             </label>
             <select
               value={cursoSeleccionadoId}
+              disabled={guardando}
               onChange={e => handleCambioCurso(e.target.value)}
               className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
             >
@@ -110,6 +132,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
                 max={20}
                 step={1}
                 required
+                disabled={guardando}
                 value={edicionNotas.n1}
                 onChange={e => setEdicionNotas({ ...edicionNotas, n1: Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 font-mono text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -126,6 +149,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
                 max={20}
                 step={1}
                 required
+                disabled={guardando}
                 value={edicionNotas.n2}
                 onChange={e => setEdicionNotas({ ...edicionNotas, n2: Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 font-mono text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -142,6 +166,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
                 max={20}
                 step={1}
                 required
+                disabled={guardando}
                 value={edicionNotas.n3}
                 onChange={e => setEdicionNotas({ ...edicionNotas, n3: Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 font-mono text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -158,6 +183,7 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
                 max={100}
                 step={1}
                 required
+                disabled={guardando}
                 value={edicionNotas.asistencia}
                 onChange={e => setEdicionNotas({ ...edicionNotas, asistencia: Number(e.target.value) })}
                 className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 font-mono text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -193,15 +219,17 @@ export const ModalCalificar: React.FC<ModalCalificarProps> = ({
             <button
               type="button"
               onClick={onCerrar}
+              disabled={guardando}
               className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
+              disabled={guardando}
               className="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors"
             >
-              Guardar y Recalcular Métricas
+              {guardando ? 'Guardando...' : 'Guardar y Recalcular Métricas'}
             </button>
           </div>
         </form>
