@@ -1,6 +1,6 @@
 # Backend FastAPI + SQLite (EduControl Académico)
 
-Este backend gestiona la persistencia de datos en una base de datos local SQLite (`colegio.db`) para el sistema escolar.
+Este backend gestiona la persistencia de datos en una base de datos local SQLite (`backend/colegio.db`) para el sistema escolar. El archivo siempre se ubica junto a `database.py`, independientemente de la carpeta desde la que se inicie Uvicorn.
 
 ## Requisitos Previos
 - Python 3.9 o superior instalado en tu computadora.
