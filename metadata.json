@@ -1,0 +1,8 @@
+{
+  "name": "Sistema Web de Gestión Académica y Control de Notas",
+  "description": "Sistema integral de gestión académica escolar con consulta de boletas por DNI para familias y panel administrativo docente para calificaciones y actas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
